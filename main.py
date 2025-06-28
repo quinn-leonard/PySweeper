@@ -3,73 +3,115 @@ import sys
 import numpy
 import utils
 
-colors = [pygame.Color("blue"), pygame.Color("forestgreen"), pygame.Color("red"), pygame.Color("blue4"), pygame.Color("brown4"), pygame.Color("cadetblue"), pygame.Color("black"), pygame.Color("gold")]
-
+# Constants
 WIDTH = 10
 HEIGHT = 10
 BOMBS = 10
 TILESIZE = 30
 
-pygame.font.init()
-valueFont = pygame.font.SysFont('Comic Sans MS', 16)
-scoreFont = pygame.font.SysFont('Comic Sans MS', 18)
+# Array of colours for the tile numbers
+NUMBERCOLOURS = [pygame.Color("blue"),          # 1
+                 pygame.Color("forestgreen"),   # 2 
+                 pygame.Color("red"),           # 3
+                 pygame.Color("blue4"),         # 4
+                 pygame.Color("brown4"),        # 5
+                 pygame.Color("cadetblue"),     # 6
+                 pygame.Color("black"),         # 7
+                 pygame.Color("gold")]          # 8
 
+# Font Setup
+pygame.font.init()
+valueFont = pygame.font.SysFont('Comic Sans MS', 16)    # Font for tile numbers
+scoreFont = pygame.font.SysFont('Comic Sans MS', 18)    # Font for score values
+
+# Tile
+# Class for maintaining an individual tile
+# Extends pygame.Rect
+#   
+# Attributes:
+#   x: X-coordinate in the grid
+#   y: Y-coordinate in the grid
+#   value: Number of mines the tile is touching. Mines have a value of -1
 class Tile(pygame.Rect):
     def __init__(self, x, y, value):
+        # Define rect dimensions
         super().__init__(x * TILESIZE, y * TILESIZE, TILESIZE, TILESIZE)
+        
+        # Initialize attributes
         self.value = value
         self.clicked = False
         self.hovered = False
         self.flagged = False
         self.visible = False
+        
+        # Define bounding rect for drawing flags and bounding boxes
         self.flagRect = pygame.Rect(x * TILESIZE + (TILESIZE // 4), y * TILESIZE + (TILESIZE // 4), TILESIZE // 2, TILESIZE // 2)
 
+    # draw(self, surface)
+    # Method for drawing a tile to the screen
+    #
+    # Arguments:
+    #   surface: Surface to draw the tile to
     def draw(self, surface):
-        if self.clicked == False:
-            if (self.hovered == False) or (self.flagged == True):
-                pygame.draw.rect(surface, pygame.Color("azure2"), self)
-                pygame.draw.rect(surface, pygame.Color("azure3"), self, width=5)
-            else:
-                pygame.draw.rect(surface, pygame.Color("azure3"), self)
-            if self.flagged:
-                pygame.draw.ellipse(surface, pygame.Color("red"), self.flagRect)
+        
+        # Visible tiles
         if (self.clicked == True) or (self.visible == True):
+            
+            # Mines
             if self.value == -1:
                 if self.clicked == True:
                     pygame.draw.rect(surface, pygame.Color("red"), self)
                 else:
                     pygame.draw.rect(surface, pygame.Color("azure4"), self)
                 pygame.draw.ellipse(surface, pygame.Color("black"), self.flagRect)
+                
+            # Safe tiles
             else:    
                 pygame.draw.rect(surface, pygame.Color("azure4"), self)
                 if (self.value > 0):
-                    valueSurface = valueFont.render(str(self.value), False, colors[self.value - 1])
+                    valueSurface = valueFont.render(str(self.value), False, NUMBERCOLOURS[self.value - 1])
                     surface.blit(valueSurface, (self.x + (TILESIZE // 3),self.y))
+                    
+        # Invisible tiles
+        else:
             
-
+            # Plain Tiles
+            if (self.hovered == False) or (self.flagged == True):
+                pygame.draw.rect(surface, pygame.Color("azure2"), self)
+                pygame.draw.rect(surface, pygame.Color("azure3"), self, width=5)
+                
+            # Hovered Tiles
+            else:
+                pygame.draw.rect(surface, pygame.Color("azure3"), self)
+                
+            # Flagged Tiles
+            if self.flagged:
+                pygame.draw.ellipse(surface, pygame.Color("red"), self.flagRect)
+            
+# Command line arguments
 if len(sys.argv) == 4:
     WIDTH = int(sys.argv[1])
     HEIGHT = int(sys.argv[2])
     BOMBS = int(sys.argv[3])
     
-# pygame setup
+# Pygame setup
 pygame.init()
-map = utils.generate_map(WIDTH, HEIGHT, BOMBS)
-visibilityMask = numpy.zeros((WIDTH, HEIGHT), dtype=int)
-tiles = [[None] * WIDTH for i in range(HEIGHT)]
-remainingBombs = BOMBS
-for i in range(HEIGHT):
-    for j in range(WIDTH):
-        tiles[i][j] = Tile(j, i, map[i][j])
-
-hoveredTile = tiles[0][0]
-        
 screen = pygame.display.set_mode((WIDTH * TILESIZE, (HEIGHT + 2) * TILESIZE))
 pygame.display.set_caption("PySweeper")
 clock = pygame.time.Clock()
 time = 0
 running = True
 gameOver = False
+
+# Generate map
+map = utils.generate_map(WIDTH, HEIGHT, BOMBS)
+tiles = [[None] * WIDTH for i in range(HEIGHT)]
+remainingBombs = BOMBS
+for i in range(HEIGHT):
+    for j in range(WIDTH):
+        tiles[i][j] = Tile(j, i, map[i][j])
+
+hoveredTile = None
 
 def click(x, y):
     tile = tiles[y][x]

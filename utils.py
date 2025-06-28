@@ -1,4 +1,3 @@
-import random
 import numpy
 
 def generate_map(width=10, height=10, bombs=10):
