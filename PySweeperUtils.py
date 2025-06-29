@@ -105,7 +105,8 @@ class Game():
         self.width = width
         self.height = height
         self.remainingBombs = bombs
-        self.time = 0
+        self.start_ticks = pygame.time.get_ticks()
+        self.elapsed_time = 0
         self.hoveredTile = None
         self.gameOver = False
         self.map = [[None] * width for i in range(height)]
@@ -159,7 +160,7 @@ class Game():
         scoreRect = pygame.Rect(0, self.height * TILESIZE, self.width * TILESIZE, TILESIZE * 2)
         pygame.draw.rect(surface, pygame.Color("white"), scoreRect)
         scoreSurface = scoreFont.render("Remaining Bombs: " + str(self.remainingBombs), False, pygame.Color("black"))
-        timeSurface = scoreFont.render("Time: " + str(self.time // 1000), False, pygame.Color("black"))
+        timeSurface = scoreFont.render("Time: " + str(self.elapsed_time // 1000), False, pygame.Color("black"))
         surface.blit(scoreSurface, (TILESIZE // 4, self.height * TILESIZE))
         surface.blit(timeSurface, (TILESIZE // 4, (self.height + 1) * TILESIZE))
 
@@ -234,7 +235,7 @@ class Game():
     #   x_index: X-coordinate of flagged tile
     #   y_index: Y-coordinate of flagged tile
     def flag(self, x_index, y_index):
-        if (x_index > 0) and (x_index < self.width) and (y_index > 0) and (y_index < self.height):
+        if (x_index >= 0) and (x_index < self.width) and (y_index >= 0) and (y_index < self.height):
             tile = self.map[y_index][x_index]
             if not tile.clicked:
                 if tile.flagged:
@@ -251,7 +252,7 @@ class Game():
     #   x_index: X-coordinate of hovered tile
     #   y_index: Y-coordinate of hovered tile
     def hover(self, x_index, y_index):
-        if (x_index > 0) and (x_index < self.width) and (y_index > 0) and (y_index < self.height) and (not self.gameOver):
+        if (x_index >= 0) and (x_index < self.width) and (y_index >= 0) and (y_index < self.height) and (not self.gameOver):
             self.hoveredTile = self.map[y_index][x_index]
         else:
             self.hoveredTile = None

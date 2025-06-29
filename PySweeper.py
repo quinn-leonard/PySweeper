@@ -6,6 +6,7 @@
 
 import pygame
 import PySweeperUtils
+import NewGame
 import sys
 
 # Font Setup
@@ -24,10 +25,13 @@ if len(sys.argv) == 4:
         width = int(sys.argv[1])
         height = int(sys.argv[2])
         bombs = int(sys.argv[3])
+
+        if (width not in range(1, 101)) or (height not in range(1, 101)) or (bombs not in range(0, width*height)):
+            width, height, bombs = NewGame.get_board_parameters()
     except:
-        width = 10
-        height = 10
-        bombs = 10
+        width, height, bombs = NewGame.get_board_parameters()
+else:
+    width, height, bombs = NewGame.get_board_parameters()
 
 # Pygame setup
 pygame.init()
@@ -36,8 +40,7 @@ pygame.display.set_caption("PySweeper")
 clock = pygame.time.Clock()
 running = True
 game = PySweeperUtils.Game(width, height, bombs)
-loss = False
-win = False
+loss = win = False
 
 # Gameplay loop
 while running:
@@ -55,16 +58,34 @@ while running:
             running = False
 
         # Clicking
-        if (not game.gameOver) and (event.type == pygame.MOUSEBUTTONDOWN):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if not game.gameOver:
+                # Left clicking (digging)
+                if event.button == 1: 
+                    loss = game.click(event.pos[0] // PySweeperUtils.TILESIZE, event.pos[1] // PySweeperUtils.TILESIZE)
+                    win = game.check_for_win()
 
-            # Left clicking (digging)
-            if event.button == 1: 
-                loss = game.click(event.pos[0] // PySweeperUtils.TILESIZE, event.pos[1] // PySweeperUtils.TILESIZE)
-                win = game.check_for_win()
+                # Right clicking (flagging)
+                if event.button == 3:
+                    game.flag(event.pos[0] // PySweeperUtils.TILESIZE, event.pos[1] // PySweeperUtils.TILESIZE)
+            else:
+                # Left clicking (reset with new parameters)
+                if event.button == 1:
+                    pygame.display.quit()
+                    width, height, bombs = NewGame.get_board_parameters()
+                    screen = pygame.display.set_mode((width * PySweeperUtils.TILESIZE, (height + 2) * PySweeperUtils.TILESIZE))
+                    pygame.display.set_caption("PySweeper")
+                    game = PySweeperUtils.Game(width, height, bombs)
+                    game.time = pygame.time.get_ticks()
+                    loss = win = False
+                    
 
-            # Right clicking (flagging)
-            if event.button == 3:
-                game.flag(event.pos[0] // PySweeperUtils.TILESIZE, event.pos[1] // PySweeperUtils.TILESIZE)
+                # Right clicking (reset with same parameters)
+                if event.button == 3:
+                    pygame.display.set_caption("PySweeper")
+                    game = PySweeperUtils.Game(width, height, bombs)
+                    game.time = pygame.time.get_ticks()
+                    loss = win = False
 
     # Render frame to screen
     game.draw(screen, valueFont, scoreFont)
@@ -73,7 +94,7 @@ while running:
     pygame.display.flip()
 
     # Increment timer
-    if not game.gameOver: game.time += clock.get_time()
+    if not game.gameOver: game.elapsed_time = (pygame.time.get_ticks() - game.start_ticks)
     
     # Limit FPS to 60
     clock.tick(60)
